@@ -41,3 +41,13 @@ neoForge {
 }
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+// Implement mcgradleconventions loader attribute
+def loaderAttribute = Attribute.of('io.github.mcgradleconventions', String)
+sourceSets.configureEach {
+    configurations.named(it.getTaskName(null, "jarJar")) {
+        attributes {
+            attribute(loaderAttribute, project.name)
+        }
+    }
+}
