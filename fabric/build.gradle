@@ -37,7 +37,7 @@ loom {
 }
 
 // Implement mcgradleconventions loader attribute
-def loaderAttribute = Attribute.of('io.github.mcgradleconventions', String)
+def loaderAttribute = Attribute.of('io.github.mcgradleconventions.loader', String)
 loom.remapConfigurations.configureEach {
     configurations.named(it.name) {
         attributes {
