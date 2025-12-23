@@ -1,0 +1,88 @@
+// This build.gradle is shared by all neoforge subprojects
+// Each mod subproject under neoforge/ will automatically use this configuration
+
+apply plugin: 'multiloader-loader'
+apply plugin: 'net.neoforged.moddev'
+
+// Load mod-specific properties
+ext {
+    modId = project.findProperty('mod_id') ?: rootProject.findProperty('mod_id')
+    modName = project.findProperty('mod_name') ?: rootProject.findProperty('mod_name')
+    modVersion = project.findProperty('version') ?: rootProject.findProperty('version')
+}
+
+base {
+    archivesName = "${modId}-neoforge-${minecraft_version}"
+}
+
+neoForge {
+    version = neoforge_version
+    // Automatically enable neoforge AccessTransformers if the file exists
+    def commonProjectPath = ":common:${project.name}"
+    def at = project(commonProjectPath).file('src/main/resources/META-INF/accesstransformer.cfg')
+    if (at.exists()) {
+        accessTransformers.from(at.absolutePath)
+    }
+    parchment {
+        minecraftVersion = parchment_minecraft
+        mappingsVersion = parchment_version
+    }
+    runs {
+        configureEach {
+            systemProperty 'neoforge.enabledGameTestNamespaces', modId
+            ideName = "NeoForge ${it.name.capitalize()} - ${project.name}"
+        }
+        client {
+            client()
+        }
+        data {
+            clientData()
+            programArguments.addAll '--mod', modId, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+        }
+        server {
+            server()
+        }
+    }
+    mods {
+        "${modId}" {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+dependencies {
+    // Depend on the common module for this mod
+    def commonProjectPath = ":common:${project.name}"
+    compileOnly(project(commonProjectPath)) {
+        capabilities {
+            requireCapability "${project.group}:${modId}"
+        }
+        def loaderAttribute = Attribute.of('io.github.mcgradleconventions.loader', String)
+        attributes {
+            attribute(loaderAttribute, 'common')
+        }
+    }
+    commonJava project(path: commonProjectPath, configuration: 'commonJava')
+    commonResources project(path: commonProjectPath, configuration: 'commonResources')
+}
+
+// Implement mcgradleconventions loader attribute
+def loaderAttribute = Attribute.of('io.github.mcgradleconventions.loader', String)
+['apiElements', 'runtimeElements', 'sourcesElements', 'javadocElements'].each { variant ->
+    configurations.named("$variant") {
+        attributes {
+            attribute(loaderAttribute, 'neoforge')
+        }
+    }
+}
+sourceSets.configureEach {
+    [it.compileClasspathConfigurationName, it.runtimeClasspathConfigurationName, it.getTaskName(null, 'jarJar')].each { variant->
+        configurations.named("$variant") {
+            attributes {
+                attribute(loaderAttribute, 'neoforge')
+            }
+        }
+    }
+}

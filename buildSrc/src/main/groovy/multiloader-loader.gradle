@@ -11,19 +11,8 @@ configurations {
     }
 }
 
-dependencies {
-    compileOnly(project(':common')) {
-        capabilities {
-            requireCapability "$group:$mod_id"
-        }
-        def loaderAttribute = Attribute.of('io.github.mcgradleconventions.loader', String)
-        attributes {
-            attribute(loaderAttribute, 'common')
-        }
-    }
-    commonJava project(path: ':common', configuration: 'commonJava')
-    commonResources project(path: ':common', configuration: 'commonResources')
-}
+// Note: Dependencies on common module are configured in each loader's shared build.gradle
+// This allows the shared build.gradle to reference the correct common subproject dynamically
 
 tasks.named('compileJava', JavaCompile) {
     dependsOn(configurations.commonJava)

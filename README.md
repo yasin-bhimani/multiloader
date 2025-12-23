@@ -1,32 +1,270 @@
-# MultiLoader Template
+# MultiLoader Minecraft Mods Monorepo
 
-This project provides a Gradle project template that can compile Minecraft mods for multiple modloaders using a common project for the sources. This project does not require any third party libraries or dependencies. If you have any questions or want to discuss the project, please join our [Discord](https://discord.myceliummod.network).
+A monorepo template for developing multiple Minecraft mods that compile for **Fabric**, **Forge**, and **NeoForge** using shared build configurations and a common codebase.
 
-## Getting Started
+## 🌟 What Makes This Special?
 
-### IntelliJ IDEA
-This guide will show how to import the MultiLoader Template into IntelliJ IDEA. The setup process is roughly equivalent to setting up the modloaders independently and should be very familiar to anyone who has worked with their MDKs.
+This isn't just a MultiLoader template - it's a **monorepo** that lets you manage multiple mods efficiently:
 
-1. Clone or download this repository to your computer.
-2. Configure the project by setting the properties in the `gradle.properties` file. You will also need to change the `rootProject.name`  property in `settings.gradle`, this should match the folder name of your project, or else IDEA may complain.
-3. Open the template's root folder as a new project in IDEA. This is the folder that contains this README.md file and the gradlew executable.
-4. If your default JVM/JDK is not Java 21 you will encounter an error when opening the project. This error is fixed by going to `File > Settings > Build, Execution, Deployment > Build Tools > Gradle > Gradle JVM` and changing the value to a valid Java 21 JVM. You will also need to set the Project SDK to Java 21. This can be done by going to `File > Project Structure > Project SDK`. Once both have been set open the Gradle tab in IDEA and click the refresh button to reload the project.
-5. Open your Run/Debug Configurations. Under the `Application` category there should now be options to run Fabric and NeoForge projects. Select one of the client options and try to run it.
-6. Assuming you were able to run the game in step 5 your workspace should now be set up.
+- **Loader-First Organization**: Each loader (common, fabric, forge, neoforge) contains multiple mod subprojects
+- **Shared Build Logic**: Write build configuration once, use it for all your mods
+- **Zero Configuration Overhead**: Adding a new mod requires just creating folders and a simple properties file
+- **Automatic Discovery**: New mods are automatically detected by Gradle
+- **Independent Execution**: Each mod gets its own run directories and IDE configurations
 
-### Eclipse
-While it is possible to use this template in Eclipse it is not recommended. During the development of this template multiple critical bugs and quirks related to Eclipse were found at nearly every level of the required build tools. While we continue to work with these tools to report and resolve issues support for projects like these are not there yet. For now Eclipse is considered unsupported by this project. The development cycle for build tools is notoriously slow so there are no ETAs available.
+## 📁 Project Structure
 
-## Development Guide
-When using this template the majority of your mod should be developed in the `common` project. The `common` project is compiled against the vanilla game and is used to hold code that is shared between the different loader-specific versions of your mod. The `common` project has no knowledge or access to ModLoader specific code, apis, or concepts. Code that requires something from a specific loader must be done through the project that is specific to that loader, such as the `fabric` or `neoforge` projects.
+```
+multiloader-mods-mc/
+├── common/              # Shared code for all mods (vanilla Minecraft only)
+│   ├── examplemod/
+│   ├── anothermod/
+│   └── build.gradle     # Shared config for all common subprojects
+├── fabric/              # Fabric-specific implementations
+│   ├── examplemod/
+│   ├── anothermod/
+│   └── build.gradle     # Shared config for all fabric subprojects
+├── forge/               # Forge-specific implementations
+│   ├── examplemod/
+│   └── build.gradle
+├── neoforge/            # NeoForge-specific implementations
+│   ├── examplemod/
+│   └── build.gradle
+├── buildSrc/            # Custom Gradle plugins
+├── gradle.properties    # Global settings (MC version, loader versions)
+└── settings.gradle      # Automatic subproject discovery
+```
 
-Loader specific projects such as the `fabric` and `neoforge` project are used to load the `common` project into the game. These projects also define code that is specific to that loader. Loader specific projects can access all the code in the `common` project. It is important to remember that the `common` project can not access code from loader specific projects.
+## 🚀 Quick Start
 
-## Removing Platforms and Loaders
-While this template has support for many modloaders, new loaders may appear in the future, and existing loaders may become less relevant.
+### Prerequisites
 
-Removing loader specific projects is as easy as deleting the folder, and removing the `include("projectname")` line from the `settings.gradle` file.
-For example if you wanted to remove support for `forge` you would follow the following steps:
+- **Java 21** JDK
+- **IntelliJ IDEA** (recommended) or another IDE with Gradle support
 
-1. Delete the subproject folder. For example, delete `MultiLoader-Template/forge`.
-2. Remove the project from `settings.gradle`. For example, remove `include("forge")`. 
+### Setup
+
+1. **Clone this repository**
+
+   ```bash
+   git clone <your-repo-url>
+   cd multiloader-mods-mc
+   ```
+
+2. **Open in IntelliJ IDEA**
+
+   - File → Open → Select the root folder
+   - If asked about trust, trust the project
+
+3. **Configure Java**
+
+   - Go to File → Project Structure → Project SDK → Select Java 21
+   - Go to File → Settings → Build, Execution, Deployment → Build Tools → Gradle
+   - Set "Gradle JVM" to Java 21
+
+4. **Refresh Gradle**
+
+   - Click the Gradle refresh button in the Gradle panel
+   - All mods will be automatically discovered
+
+5. **Run a mod**
+   - Run configurations will appear automatically
+   - Select "Fabric Client - examplemod" or any other configuration
+   - Click Run!
+
+## ✨ Creating a New Mod
+
+### Option 1: Using the Script (Recommended)
+
+**Linux/Mac:**
+
+```bash
+./create-mod.sh coolmod
+```
+
+**Windows:**
+
+```batch
+create-mod.bat coolmod
+```
+
+This automatically creates the complete structure!
+
+### Option 2: Manual Creation
+
+1. **Create directories:**
+
+   ```bash
+   mkdir -p common/coolmod/src/main/{java,resources}
+   mkdir -p fabric/coolmod/src/main/{java,resources}
+   mkdir -p forge/coolmod/src/main/{java,resources}
+   mkdir -p neoforge/coolmod/src/main/{java,resources}
+   ```
+
+2. **Create `common/coolmod/gradle.properties`:**
+
+   ```properties
+   mod_id=coolmod
+   mod_name=Cool Mod
+   mod_author=YourName
+   version=1.0.0
+   description=A cool Minecraft mod
+   ```
+
+3. **Create `gradle.properties` in fabric/forge/neoforge:**
+
+   ```properties
+   mod_id=coolmod
+   mod_name=Cool Mod
+   version=1.0.0
+   ```
+
+4. **Refresh Gradle** - Your mod is ready!
+
+## 🎮 Working with Mods
+
+### Running Mods
+
+Each mod has separate run configurations:
+
+- **Fabric**: `Fabric Client - modname`, `Fabric Server - modname`
+- **Forge**: `Client - modname`, `Server - modname`, `Data - modname`
+- **NeoForge**: `NeoForge Client - modname`, `NeoForge Server - modname`
+
+### Building Mods
+
+```bash
+# Build everything
+./gradlew build
+
+# Build specific mod for all loaders
+./gradlew :common:mymod:build :fabric:mymod:build :forge:mymod:build :neoforge:mymod:build
+
+# Build specific mod for one loader
+./gradlew :fabric:mymod:build
+```
+
+### Testing Mods
+
+Run configurations are isolated per mod with separate run directories:
+
+```
+runs/
+├── examplemod/
+│   ├── client/
+│   └── server/
+└── coolmod/
+    ├── client/
+    └── server/
+```
+
+## 🛠️ Configuration
+
+### Global Configuration (`gradle.properties` in root)
+
+Applies to **ALL** mods:
+
+- `minecraft_version` - Minecraft version
+- `fabric_version`, `forge_version`, `neoforge_version` - Loader versions
+- `java_version` - Java version
+- `parchment_minecraft`, `parchment_version` - Mapping versions
+
+### Per-Mod Configuration
+
+Each mod's `gradle.properties` (in `common/modname/`, `fabric/modname/`, etc.):
+
+- `mod_id` - Unique identifier (required)
+- `mod_name` - Display name (required)
+- `mod_author` - Your name
+- `version` - Mod version
+- `description` - Mod description
+
+## 📚 Development Guidelines
+
+### Common Module (`common/modname/`)
+
+✅ **Use for:**
+
+- Shared game logic across all loaders
+- Vanilla Minecraft APIs only
+- Service provider interfaces for platform abstraction
+- Common mixins
+
+❌ **Avoid:**
+
+- Loader-specific APIs (Fabric API, Forge events, etc.)
+- Direct references to mod loaders
+
+### Loader Modules (`fabric/modname/`, `forge/modname/`, `neoforge/modname/`)
+
+✅ **Use for:**
+
+- Mod entry points and initialization
+- Service provider implementations
+- Loader-specific event handlers
+- Loader-specific mixins
+
+### Service Provider Pattern
+
+For calling loader-specific code from common code:
+
+1. **Define interface in common** (`common/mymod/src/.../IPlatformHelper.java`)
+2. **Implement in each loader** (`fabric/mymod/src/.../FabricPlatformHelper.java`)
+3. **Register service** (`META-INF/services/com.example.IPlatformHelper`)
+
+See existing `examplemod` for a complete example!
+
+## 📖 Documentation
+
+- **[MONOREPO_GUIDE.md](MONOREPO_GUIDE.md)** - Detailed guide on using this monorepo
+- **[Fabric Wiki](https://fabricmc.net/wiki/)**
+- **[Forge Docs](https://docs.minecraftforge.net/)**
+- **[NeoForge Docs](https://docs.neoforged.net/)**
+
+## 🎯 Current Versions
+
+- **Minecraft**: 1.21.11
+- **Java**: 21
+- **Fabric Loader**: 0.18.2
+- **Fabric API**: 0.139.5+1.21.11
+- **Forge**: 61.0.1
+- **NeoForge**: 21.11.3-beta
+
+## 🔧 Troubleshooting
+
+**"Cannot find project ':common:mymod'"**
+
+- Make sure the directory structure exists
+- Refresh Gradle
+
+**"Java version mismatch"**
+
+- Ensure Project SDK and Gradle JVM are both set to Java 21
+
+**"Run configuration not appearing"**
+
+- Refresh Gradle
+- Check that `src/` directories exist in the mod folders
+
+## 🤝 Contributing to This Monorepo
+
+When adding new mods:
+
+1. Follow the naming conventions (lowercase for mod IDs)
+2. Keep common code truly common (vanilla APIs only)
+3. Test on all three loaders before committing
+4. Update your mod's version in `gradle.properties`
+
+## 📄 License
+
+This template is released under [CC0-1.0](LICENSE). Your mods can use any license you choose.
+
+## 🙏 Credits
+
+Based on the [MultiLoader Template](https://github.com/jaredlll08/MultiLoader-Template) by Jared.
+
+---
+
+**Happy Modding! 🎮✨**
+
+_Need help? Check out [MONOREPO_GUIDE.md](MONOREPO_GUIDE.md) for detailed documentation._

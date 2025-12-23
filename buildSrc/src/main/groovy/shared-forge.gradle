@@ -1,0 +1,133 @@
+// This build.gradle is shared by all forge subprojects
+// Each mod subproject under forge/ will automatically use this configuration
+
+apply plugin: 'multiloader-loader'
+apply plugin: 'net.minecraftforge.gradle'
+apply plugin: 'org.spongepowered.mixin'
+apply plugin: 'idea'
+
+// Load mod-specific properties
+ext {
+    modId = project.findProperty('mod_id') ?: rootProject.findProperty('mod_id')
+    modName = project.findProperty('mod_name') ?: rootProject.findProperty('mod_name')
+    modVersion = project.findProperty('version') ?: rootProject.findProperty('version')
+}
+
+base {
+    archivesName = "${modId}-forge-${minecraft_version}"
+}
+
+mixin {
+    config("${modId}.mixins.json")
+    config("${modId}.forge.mixins.json")
+}
+
+jar {
+    manifest {
+        attributes["MixinConfigs"] = "${modId}.mixins.json,${modId}.forge.mixins.json"
+    }
+}
+
+minecraft {
+    mappings channel: 'official', version: minecraft_version
+
+    copyIdeResources = true //Calls processResources when in dev
+
+    reobf = false // Forge 1.20.6+ uses official mappings at runtime, so we shouldn't reobf from official to SRG
+
+    // Automatically enable forge AccessTransformers if the file exists
+    def at = file('src/main/resources/META-INF/accesstransformer.cfg')
+    if (at.exists()) {
+        accessTransformer = at
+    }
+
+    runs {
+        client {
+            workingDirectory file("runs/${project.name}/client")
+            ideaModule "${rootProject.name}.${project.parent.name}.${project.name}.main"
+            taskName "Client - ${project.name}"
+            mods {
+                "${modId}" {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        server {
+            workingDirectory file("runs/${project.name}/server")
+            ideaModule "${rootProject.name}.${project.parent.name}.${project.name}.main"
+            taskName "Server - ${project.name}"
+            mods {
+                "${modId}" {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        data {
+            workingDirectory file("runs/${project.name}/data")
+            ideaModule "${rootProject.name}.${project.parent.name}.${project.name}.main"
+            args '--mod', modId, '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
+            taskName "Data - ${project.name}"
+            mods {
+                "${modId}" {
+                    source sourceSets.main
+                }
+            }
+        }
+    }
+}
+
+sourceSets.main.resources.srcDir 'src/generated/resources'
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    annotationProcessor("org.spongepowered:mixin:0.8.5-SNAPSHOT:processor")
+    
+    // Depend on the common module for this mod
+    def commonProjectPath = ":common:${project.name}"
+    compileOnly(project(commonProjectPath)) {
+        capabilities {
+            requireCapability "${project.group}:${modId}"
+        }
+        def loaderAttribute = Attribute.of('io.github.mcgradleconventions.loader', String)
+        attributes {
+            attribute(loaderAttribute, 'common')
+        }
+    }
+    commonJava project(path: commonProjectPath, configuration: 'commonJava')
+    commonResources project(path: commonProjectPath, configuration: 'commonResources')
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            fg.component(it)
+        }
+    }
+}
+
+sourceSets.each {
+    def dir = layout.buildDirectory.dir("sourcesSets/$it.name")
+    it.output.resourcesDir = dir
+    it.java.destinationDirectory = dir
+}
+
+// Implement mcgradleconventions loader attribute
+def loaderAttribute = Attribute.of('io.github.mcgradleconventions.loader', String)
+['apiElements', 'runtimeElements', 'sourcesElements', 'javadocElements'].each { variant ->
+    configurations.named("$variant") {
+        attributes {
+            attribute(loaderAttribute, 'forge')
+        }
+    }
+}
+sourceSets.configureEach {
+    [it.compileClasspathConfigurationName, it.runtimeClasspathConfigurationName].each { variant->
+        configurations.named("$variant") {
+            attributes {
+                attribute(loaderAttribute, 'forge')
+            }
+        }
+    }
+}
